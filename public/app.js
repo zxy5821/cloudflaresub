@@ -89,12 +89,11 @@ form.addEventListener('submit', async (event) => {
       warningBox.classList.remove('hidden');
     }
 
-    resultSection.classList.remove('hidden');
+    emptyState.classList.add('hidden');
     resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (error) {
     warningBox.textContent = error.message || '请求失败';
     warningBox.classList.remove('hidden');
-    resultSection.classList.remove('hidden');
   } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = '生成订阅';
