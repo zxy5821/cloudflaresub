@@ -143,38 +143,77 @@ export function parsePreferredEndpoints(inputText) {
   return { endpoints, warnings };
 }
 
+export function parseNameMappings(inputText) {
+  const text = normalizeText(inputText);
+  if (!text) {
+    return { mappings: {}, warnings: [] };
+  }
+
+  const mappings = {};
+  const warnings = [];
+
+  text.split('\n').forEach((line, index) => {
+    const rawLine = line.trim();
+    if (!rawLine) {
+      return;
+    }
+
+    const separator = rawLine.includes('=>') ? '=>' : '=';
+    const separatorIndex = rawLine.indexOf(separator);
+    if (separatorIndex <= 0) {
+      warnings.push(`第 ${index + 1} 行名称映射格式错误，应为 原名称=新名称`);
+      return;
+    }
+
+    const sourceName = rawLine.slice(0, separatorIndex).trim();
+    const targetName = rawLine.slice(separatorIndex + separator.length).trim();
+
+    if (!sourceName || !targetName) {
+      warnings.push(`第 ${index + 1} 行名称映射格式错误，应为 原名称=新名称`);
+      return;
+    }
+
+    mappings[sourceName] = targetName;
+  });
+
+  return { mappings, warnings };
+}
+
 export function expandNodes(baseNodes, endpoints, options = {}) {
   const keepOriginalHost = options.keepOriginalHost !== false;
   const namePrefix = String(options.namePrefix || '').trim();
   const nameTemplate = String(options.nameTemplate || '').trim();
+  const nameMappings = options.nameMappings || {};
   const warnings = [];
   const expanded = [];
 
   baseNodes.forEach((baseNode) => {
+    const mappedName = String(nameMappings[baseNode.name] || '').trim();
+    const effectiveBaseNode = mappedName ? { ...baseNode, name: mappedName } : baseNode;
     const originalTlsHost = getEffectiveTlsHost(baseNode);
     if (keepOriginalHost && !originalTlsHost) {
-      warnings.push(`节点「${baseNode.name}」缺少 Host/SNI/原始域名，替换成优选 IP 后可能无法握手。`);
+      warnings.push(`节点「${effectiveBaseNode.name}」缺少 Host/SNI/原始域名，替换成优选 IP 后可能无法握手。`);
     }
 
     endpoints.forEach((endpoint, index) => {
-      const port = endpoint.port || baseNode.port;
+      const port = endpoint.port || effectiveBaseNode.port;
       const label = endpoint.label || `${endpoint.host}:${port}`;
       const suffix = namePrefix ? `${namePrefix}-${index + 1}` : label;
-      const clone = deepClone(baseNode);
+      const clone = deepClone(effectiveBaseNode);
       clone.server = endpoint.host;
       clone.port = port;
-      clone.name = buildExpandedNodeName(baseNode, endpoint, port, index, namePrefix, nameTemplate, suffix);
+      clone.name = buildExpandedNodeName(effectiveBaseNode, endpoint, port, index, namePrefix, nameTemplate, suffix);
       clone.endpointLabel = endpoint.label || '';
       clone.endpointSource = `${endpoint.host}:${port}`;
 
       if (keepOriginalHost) {
-        clone.sni = baseNode.sni || baseNode.hostHeader || baseNode.originalServer || '';
-        clone.hostHeader = baseNode.hostHeader || baseNode.sni || baseNode.originalServer || '';
+        clone.sni = effectiveBaseNode.sni || effectiveBaseNode.hostHeader || effectiveBaseNode.originalServer || '';
+        clone.hostHeader = effectiveBaseNode.hostHeader || effectiveBaseNode.sni || effectiveBaseNode.originalServer || '';
       } else {
-        if (!baseNode.sni || baseNode.sni === baseNode.originalServer) {
+        if (!effectiveBaseNode.sni || effectiveBaseNode.sni === effectiveBaseNode.originalServer) {
           clone.sni = endpoint.host;
         }
-        if (!baseNode.hostHeader || baseNode.hostHeader === baseNode.originalServer) {
+        if (!effectiveBaseNode.hostHeader || effectiveBaseNode.hostHeader === effectiveBaseNode.originalServer) {
           clone.hostHeader = endpoint.host;
         }
       }

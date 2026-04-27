@@ -18,10 +18,11 @@
 - 支持 `vmess`、`vless`、`trojan` 节点解析
 - 支持 Base64 订阅文本自动展开
 - 支持 `host[:port][#remark]` 格式的优选地址
+- 支持自动提取原始节点名称，并按“逐行名称映射”单独改名
 - 结果写入 Workers KV，生成 `/sub/:id` 短链
-- 相同输入自动去重（7 天 TTL）
+- 相同输入自动去重（365 天 TTL）
 - 支持 `SUB_ACCESS_TOKEN` 访问令牌保护
-- 支持导出：Raw（Base64）/ Clash（YAML）/ Surge（文本）
+- 支持导出：Raw（Base64）/ Clash（模板 YAML）/ Surge（文本）
 
 ## 项目结构
 
@@ -121,6 +122,8 @@ cloudflaresub/
   "nodeLinks": "vmess://...\nvless://...",
   "preferredIps": "104.16.1.2#HK\n104.17.2.3:2053#US",
   "namePrefix": "CF",
+  "nameTemplate": "{name} | {remark}",
+  "nameMappings": "美国凤凰城2-11=凤凰城A\n341225-57ru4foh=凤凰城B",
   "keepOriginalHost": true
 }
 ```
@@ -129,6 +132,8 @@ cloudflaresub/
 - `nodeLinks`: 多行节点链接
 - `preferredIps`: 多行优选地址，格式 `host[:port][#remark]`
 - `namePrefix`: 节点名附加前缀
+- `nameTemplate`: 全局节点名称模板，可用变量 `{name}`、`{remark}`、`{index}`、`{prefix}`
+- `nameMappings`: 逐行名称映射，格式 `原名称=新名称`，按原始节点名称匹配
 - `keepOriginalHost`: 是否保留原始 Host/SNI（默认 `true`）
 
 返回示例（节选）：
@@ -163,6 +168,7 @@ curl "https://<worker>/sub/<id>?target=clash&token=<SUB_ACCESS_TOKEN>"
 
 根路径 `/` 提供网页表单（来自 `public/`）：
 - 粘贴节点链接
+- 自动提取节点名称映射，并允许逐行单独改名
 - 粘贴优选 IP / 域名
 - 生成并展示各客户端订阅链接
 - 一键复制 / 生成二维码
@@ -171,7 +177,8 @@ curl "https://<worker>/sub/<id>?target=clash&token=<SUB_ACCESS_TOKEN>"
 ## 注意事项
 
 - `src/worker.js` 当前是 KV 短链方案，不依赖 `SUB_LINK_SECRET`
-- 每条订阅记录默认保存 7 天（TTL）
+- 每条订阅记录默认保存 365 天（TTL）
+- 名称映射按“原始节点名称”匹配；如果多条原始链接本身名称完全相同，会命中同一条映射
 - Surge 导出当前仅包含 `vmess` / `trojan`
 
 ## License

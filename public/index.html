@@ -46,6 +46,19 @@
           </div>
 
           <div>
+            <label for="nameMappings">1.1 节点名称映射（自动解析，可编辑）</label>
+            <textarea
+              id="nameMappings"
+              name="nameMappings"
+              rows="6"
+              placeholder="粘贴节点链接后会自动生成，例如：
+美国凤凰城2-11=凤凰城A
+341225-57ru4foh=凤凰城B"
+            ></textarea>
+            <p class="hint">格式为 <code>原名称=新名称</code>，只改等号右侧即可；按原始节点名称匹配。</p>
+          </div>
+
+          <div>
             <label for="preferredIps">2. 粘贴优选 IP / 优选域名</label>
             <textarea
               id="preferredIps"

@@ -1,5 +1,6 @@
 import {
   expandNodes,
+  parseNameMappings,
   parseNodeLinks,
   parsePreferredEndpoints,
   renderRawSubscription,
@@ -83,6 +84,7 @@ async function buildDedupHash(body) {
     preferredIps: normalizeLines(body.preferredIps || ''),
     namePrefix: String(body.namePrefix || '').trim(),
     nameTemplate: String(body.nameTemplate || '').trim(),
+    nameMappings: normalizeLines(body.nameMappings || ''),
     keepOriginalHost: body.keepOriginalHost !== false,
   };
   return sha256Hex(JSON.stringify(normalized));
@@ -106,10 +108,13 @@ async function handleGenerate(request, env, url) {
 
   let parsedNodes;
   let parsedEndpoints;
+  let parsedNameMappings;
   let expanded;
   try {
     parsedNodes = parseNodeLinks(body.nodeLinks || '');
     parsedEndpoints = parsePreferredEndpoints(body.preferredIps || '');
+    parsedNameMappings = parseNameMappings(body.nameMappings || '');
+    options.nameMappings = parsedNameMappings.mappings;
     expanded = expandNodes(parsedNodes.nodes, parsedEndpoints.endpoints, options);
   } catch (error) {
     return json({ ok: false, error: error.message || '生成失败' }, 400);
@@ -118,6 +123,7 @@ async function handleGenerate(request, env, url) {
   const warnings = [
     ...parsedNodes.warnings,
     ...parsedEndpoints.warnings,
+    ...parsedNameMappings.warnings,
     ...expanded.warnings,
   ];
   const nodes = expanded.nodes;

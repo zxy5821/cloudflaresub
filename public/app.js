@@ -4,6 +4,8 @@ const fillDemoBtn = document.getElementById('fillDemoBtn');
 const resultSection = document.getElementById('resultSection');
 const warningBox = document.getElementById('warningBox');
 const previewBody = document.getElementById('previewBody');
+const nodeLinksInput = document.getElementById('nodeLinks');
+const nameMappingsInput = document.getElementById('nameMappings');
 
 const autoUrl = document.getElementById('autoUrl');
 const rawUrl = document.getElementById('rawUrl');
@@ -27,12 +29,15 @@ const demoIps = [
 ].join('\n');
 
 fillDemoBtn.addEventListener('click', () => {
-  document.getElementById('nodeLinks').value = demoVmess;
+  nodeLinksInput.value = demoVmess;
   document.getElementById('preferredIps').value = demoIps;
   document.getElementById('namePrefix').value = 'CF';
   document.getElementById('nameTemplate').value = '{name} | {remark}';
   document.getElementById('keepOriginalHost').checked = true;
+  syncNameMappingsFromNodeLinks();
 });
+
+nodeLinksInput.addEventListener('input', syncNameMappingsFromNodeLinks);
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -40,10 +45,11 @@ form.addEventListener('submit', async (event) => {
   previewBody.innerHTML = '';
 
   const payload = {
-    nodeLinks: document.getElementById('nodeLinks').value,
+    nodeLinks: nodeLinksInput.value,
     preferredIps: document.getElementById('preferredIps').value,
     namePrefix: document.getElementById('namePrefix').value,
     nameTemplate: document.getElementById('nameTemplate').value,
+    nameMappings: nameMappingsInput.value,
     keepOriginalHost: document.getElementById('keepOriginalHost').checked,
   };
 
@@ -184,4 +190,112 @@ function escapeHtml(value) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
+}
+
+function syncNameMappingsFromNodeLinks() {
+  const nodeNames = extractNodeNames(nodeLinksInput.value);
+  if (!nodeNames.length) {
+    return;
+  }
+
+  const existingMappings = parseNameMappingsText(nameMappingsInput.value);
+  nameMappingsInput.value = nodeNames
+    .map((name) => `${name}=${existingMappings[name] || name}`)
+    .join('\n');
+}
+
+function extractNodeNames(inputText) {
+  const expandedText = maybeExpandSubscriptionText(inputText);
+  const lines = expandedText
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const names = [];
+  const seen = new Set();
+
+  for (const line of lines) {
+    const name = extractNodeName(line);
+    if (!name || seen.has(name)) {
+      continue;
+    }
+    seen.add(name);
+    names.push(name);
+  }
+
+  return names;
+}
+
+function maybeExpandSubscriptionText(inputText) {
+  const text = String(inputText || '').trim();
+  if (!text || text.includes('://')) {
+    return text;
+  }
+  if (!/^[A-Za-z0-9+/=_-]+$/.test(text)) {
+    return text;
+  }
+
+  try {
+    const decoded = decodeBase64Utf8(text);
+    if (decoded.includes('://')) {
+      return decoded;
+    }
+  } catch {}
+
+  return text;
+}
+
+function extractNodeName(link) {
+  const text = String(link || '').trim();
+  if (!text) {
+    return '';
+  }
+
+  try {
+    if (text.startsWith('vmess://')) {
+      const payload = JSON.parse(decodeBase64Utf8(text.slice('vmess://'.length).trim()));
+      return String(payload.ps || 'vmess').trim();
+    }
+
+    if (text.startsWith('vless://') || text.startsWith('trojan://')) {
+      const url = new URL(text);
+      return decodeURIComponent(url.hash.replace(/^#/, '')).trim();
+    }
+  } catch {}
+
+  return '';
+}
+
+function decodeBase64Utf8(base64Text) {
+  const normalized = String(base64Text || '')
+    .trim()
+    .replace(/\s+/g, '')
+    .replace(/-/g, '+')
+    .replace(/_/g, '/');
+  const padding = normalized.length % 4 === 0 ? '' : '='.repeat(4 - (normalized.length % 4));
+  return decodeURIComponent(escape(window.atob(normalized + padding)));
+}
+
+function parseNameMappingsText(text) {
+  const mappings = {};
+
+  String(text || '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .forEach((line) => {
+      const separator = line.includes('=>') ? '=>' : '=';
+      const separatorIndex = line.indexOf(separator);
+      if (separatorIndex <= 0) {
+        return;
+      }
+      const sourceName = line.slice(0, separatorIndex).trim();
+      const targetName = line.slice(separatorIndex + separator.length).trim();
+      if (!sourceName || !targetName) {
+        return;
+      }
+      mappings[sourceName] = targetName;
+    });
+
+  return mappings;
 }

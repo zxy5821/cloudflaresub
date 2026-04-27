@@ -4,6 +4,7 @@ import {
   decryptPayload,
   encryptPayload,
   expandNodes,
+  parseNameMappings,
   parseNodeLinks,
   parsePreferredEndpoints,
   renderClashSubscription,
@@ -23,6 +24,9 @@ assert.equal(nodes[0].server, 'edge.example.com');
 const { endpoints } = parsePreferredEndpoints('104.16.1.2#HK\n104.17.2.3:2053#US');
 assert.equal(endpoints.length, 2);
 
+const { mappings } = parseNameMappings('demo-ws-tls=自定义主节点');
+assert.equal(mappings['demo-ws-tls'], '自定义主节点');
+
 const expanded = expandNodes(nodes, endpoints, { keepOriginalHost: true, namePrefix: 'CF' });
 assert.equal(expanded.nodes.length, 2);
 assert.equal(expanded.nodes[0].server, '104.16.1.2');
@@ -35,6 +39,13 @@ const renamed = expandNodes(nodes, endpoints, {
 });
 assert.equal(renamed.nodes[0].name, 'Node-HK-1');
 assert.equal(renamed.nodes[1].name, 'Node-US-2');
+
+const mapped = expandNodes(nodes, endpoints, {
+  keepOriginalHost: true,
+  nameMappings: mappings,
+});
+assert.equal(mapped.nodes[0].name, '自定义主节点 | HK');
+assert.equal(mapped.nodes[1].name, '自定义主节点 | US');
 
 const raw = renderRawSubscription(expanded.nodes);
 assert.ok(raw.length > 10);
@@ -118,6 +129,7 @@ const workerRequest = new Request('https://example.test/api/generate', {
     nodeLinks:
       'vless://d5164d2c-97b9-46f8-bf6e-bbec818e76f5@cf.cloudflare.182682.xyz:8443?encryption=none&security=tls&sni=cc.341225.xyz&fp=chrome&alpn=h2%2Chttp%2F1.1&insecure=0&allowInsecure=0&type=ws&host=cc.341225.xyz&path=%2Fretevddsfre#341225-57ru4foh',
     preferredIps: '104.16.1.2#US',
+    nameMappings: '341225-57ru4foh=凤凰城定制',
     nameTemplate: '自定义-{index}-{remark}',
     keepOriginalHost: true,
   }),
