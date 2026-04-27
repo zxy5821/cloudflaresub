@@ -32,6 +32,7 @@ fillDemoBtn.addEventListener('click', () => {
   nodeLinksInput.value = demoVmess;
   document.getElementById('preferredIps').value = demoIps;
   document.getElementById('namePrefix').value = 'CF';
+  document.getElementById('subscriptionName').value = 'CloudflareSub Demo';
   document.getElementById('keepOriginalHost').checked = true;
   syncNameMappingsFromNodeLinks();
 });
@@ -47,6 +48,7 @@ form.addEventListener('submit', async (event) => {
     nodeLinks: nodeLinksInput.value,
     preferredIps: document.getElementById('preferredIps').value,
     namePrefix: document.getElementById('namePrefix').value,
+    subscriptionName: document.getElementById('subscriptionName').value,
     nameMappings: nameMappingsInput.value,
     keepOriginalHost: document.getElementById('keepOriginalHost').checked,
   };

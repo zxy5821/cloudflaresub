@@ -85,9 +85,10 @@ const mergedClash = renderTemplateClashSubscription(
   ].join('\n'),
   renamed.nodes,
 );
-assert.match(mergedClash, /Old Proxy/);
 assert.match(mergedClash, /Node-HK-1/);
 assert.match(mergedClash, /MATCH,🐟 漏网之鱼/);
+assert.doesNotMatch(mergedClash, /Old Proxy/);
+assert.doesNotMatch(mergedClash, /old\.example\.com/);
 
 const secret = 'this-is-a-very-secret-key';
 const token = await encryptPayload({ nodes: expanded.nodes }, secret);
@@ -129,6 +130,7 @@ const workerRequest = new Request('https://example.test/api/generate', {
     nodeLinks:
       'vless://d5164d2c-97b9-46f8-bf6e-bbec818e76f5@cf.cloudflare.182682.xyz:8443?encryption=none&security=tls&sni=cc.341225.xyz&fp=chrome&alpn=h2%2Chttp%2F1.1&insecure=0&allowInsecure=0&type=ws&host=cc.341225.xyz&path=%2Fretevddsfre#341225-57ru4foh',
     preferredIps: '104.16.1.2#US',
+    subscriptionName: '我的订阅',
     nameMappings: '341225-57ru4foh=凤凰城定制',
     nameTemplate: '自定义-{index}-{remark}',
     keepOriginalHost: true,
@@ -147,6 +149,10 @@ assert.equal(
 
 const clashResponse = await worker.fetch(new Request(generatePayload.urls.clash), env);
 assert.equal(clashResponse.status, 200);
+assert.equal(
+  clashResponse.headers.get('content-disposition'),
+  "attachment; filename*=UTF-8''%E6%88%91%E7%9A%84%E8%AE%A2%E9%98%85.yaml",
+);
 const clashBody = await clashResponse.text();
 assert.match(clashBody, /自定义-1-US/);
 assert.match(clashBody, /proxy-groups:/);

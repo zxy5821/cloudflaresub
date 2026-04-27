@@ -330,29 +330,27 @@ export function renderTemplateClashSubscription(templateText, nodes) {
 
   const rulesIndex = lines.findIndex((line, index) => index > proxyGroupsIndex && line.trim() === 'rules:');
   const existingProxyLines = lines.slice(proxiesIndex + 1, proxyGroupsIndex);
-  const originalProxyNames = new Set(
+  const templateProxyNames = new Set(
     existingProxyLines
       .map(extractClashProxyName)
       .filter(Boolean),
   );
-  const seenProxyNames = new Set(originalProxyNames);
   const newProxyLines = [];
   const newProxyNames = [];
 
   supportedNodes.forEach((node) => {
-    if (seenProxyNames.has(node.name)) {
+    if (newProxyNames.includes(node.name)) {
       return;
     }
-    seenProxyNames.add(node.name);
     newProxyNames.push(node.name);
     newProxyLines.push(renderTemplateClashProxy(node));
   });
 
   const proxyGroupLines = lines.slice(proxyGroupsIndex, rulesIndex === -1 ? lines.length : rulesIndex);
-  const updatedProxyGroupLines = appendProxyNamesToTemplateGroups(proxyGroupLines, newProxyNames, originalProxyNames);
+  const updatedProxyGroupLines = appendProxyNamesToTemplateGroups(proxyGroupLines, newProxyNames, templateProxyNames);
 
   return [
-    ...lines.slice(0, proxyGroupsIndex),
+    ...lines.slice(0, proxiesIndex + 1),
     ...newProxyLines,
     ...updatedProxyGroupLines,
     ...(rulesIndex === -1 ? [] : lines.slice(rulesIndex)),
@@ -949,7 +947,7 @@ function renderTemplateClashProxy(node) {
   return `  - {${parts.join(', ')}}`;
 }
 
-function appendProxyNamesToTemplateGroups(groupLines, newProxyNames, existingProxyNames) {
+function appendProxyNamesToTemplateGroups(groupLines, newProxyNames, templateProxyNames) {
   const output = [...groupLines];
 
   for (let index = 1; index < output.length; index += 1) {
@@ -985,22 +983,24 @@ function appendProxyNamesToTemplateGroups(groupLines, newProxyNames, existingPro
 
     const shouldAppend =
       PRIMARY_CLASH_PROXY_GROUPS.has(groupName) ||
-      members.some((member) => existingProxyNames.has(member));
+      members.some((member) => templateProxyNames.has(member));
 
     if (!shouldAppend) {
       index = groupEnd - 1;
       continue;
     }
 
-    const memberSet = new Set(members);
-    const linesToInsert = newProxyNames
-      .filter((name) => !memberSet.has(name))
-      .map((name) => `      - ${yamlQuote(name)}`);
+    const preservedMembers = members.filter((member) => !templateProxyNames.has(member));
+    const memberSet = new Set(preservedMembers);
+    const rebuiltLines = [
+      ...preservedMembers.map((member) => `      - ${yamlQuote(member)}`),
+      ...newProxyNames
+        .filter((name) => !memberSet.has(name))
+        .map((name) => `      - ${yamlQuote(name)}`),
+    ];
 
-    if (linesToInsert.length) {
-      output.splice(membersEnd, 0, ...linesToInsert);
-      groupEnd += linesToInsert.length;
-    }
+    output.splice(proxiesLineIndex + 1, membersEnd - (proxiesLineIndex + 1), ...rebuiltLines);
+    groupEnd += rebuiltLines.length - members.length;
 
     index = groupEnd - 1;
   }

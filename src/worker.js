@@ -34,6 +34,17 @@ function text(body, status = 200, contentType = 'text/plain; charset=utf-8') {
   });
 }
 
+function download(body, filename, contentType) {
+  return new Response(body, {
+    status: 200,
+    headers: {
+      'content-type': contentType,
+      'content-disposition': `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`,
+      'access-control-allow-origin': '*',
+    },
+  });
+}
+
 function requireSubStore(env) {
   if (!env?.SUB_STORE || typeof env.SUB_STORE.get !== 'function' || typeof env.SUB_STORE.put !== 'function') {
     throw new Error('未配置 SUB_STORE 绑定，请在 Cloudflare Worker 的 Bindings 中绑定 KV namespace。');
@@ -85,6 +96,7 @@ async function buildDedupHash(body) {
     namePrefix: String(body.namePrefix || '').trim(),
     nameTemplate: String(body.nameTemplate || '').trim(),
     nameMappings: normalizeLines(body.nameMappings || ''),
+    subscriptionName: String(body.subscriptionName || '').trim(),
     keepOriginalHost: body.keepOriginalHost !== false,
   };
   return sha256Hex(JSON.stringify(normalized));
@@ -103,6 +115,7 @@ async function handleGenerate(request, env, url) {
   const options = {
     namePrefix: body.namePrefix || '',
     nameTemplate: body.nameTemplate || '',
+    subscriptionName: String(body.subscriptionName || '').trim(),
     keepOriginalHost: body.keepOriginalHost !== false,
   };
 
@@ -131,6 +144,7 @@ async function handleGenerate(request, env, url) {
     version: 2,
     createdAt: new Date().toISOString(),
     options,
+    subscriptionName: options.subscriptionName,
     nodes,
   };
 
@@ -229,23 +243,32 @@ async function handleSub(url, env) {
 
   const record = JSON.parse(raw);
   const nodes = record.nodes || [];
+  const subscriptionName = String(record.subscriptionName || record.options?.subscriptionName || id).trim() || id;
   const target = (url.searchParams.get('target') || 'raw').toLowerCase();
 
   try {
     if (target === 'clash') {
       const templateText = await loadClashTemplate(env, url.origin);
-      return text(renderTemplateClashSubscription(templateText, nodes), 200, 'text/yaml; charset=utf-8');
+      return download(
+        renderTemplateClashSubscription(templateText, nodes),
+        `${subscriptionName}.yaml`,
+        'text/yaml; charset=utf-8',
+      );
     }
 
     if (target === 'surge') {
-      return text(
+      return download(
         renderSurgeSubscription(nodes, `${url.origin}${url.pathname}?target=surge&token=${encodeURIComponent(env.SUB_ACCESS_TOKEN || '')}`),
-        200,
+        `${subscriptionName}.conf`,
         'text/plain; charset=utf-8',
       );
     }
 
-    return text(renderRawSubscription(nodes), 200, 'text/plain; charset=utf-8');
+    return download(
+      renderRawSubscription(nodes),
+      `${subscriptionName}.txt`,
+      'text/plain; charset=utf-8',
+    );
   } catch (error) {
     return text(error.message || 'subscription render failed', 500);
   }

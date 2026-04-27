@@ -46,7 +46,7 @@
           </div>
 
           <div>
-            <label for="nameMappings">1.1 节点名称映射（自动解析，可编辑）</label>
+            <label for="nameMappings">2. 节点名称映射（自动解析，可编辑）</label>
             <textarea
               id="nameMappings"
               name="nameMappings"
@@ -59,7 +59,7 @@
           </div>
 
           <div>
-            <label for="preferredIps">2. 粘贴优选 IP / 优选域名</label>
+            <label for="preferredIps">3. 粘贴优选 IP / 优选域名</label>
             <textarea
               id="preferredIps"
               name="preferredIps"
@@ -77,13 +77,18 @@ cf.example.com:443#US-Edge"
 
           <div class="grid two-col compact">
             <div>
-              <label for="namePrefix">3. 备注前缀（可选）</label>
+              <label for="namePrefix">4. 备注前缀（可选）</label>
               <input id="namePrefix" name="namePrefix" type="text" placeholder="例如 CF" />
             </div>
-            <div class="checkbox-wrap">
-              <input id="keepOriginalHost" name="keepOriginalHost" type="checkbox" checked />
-              <label for="keepOriginalHost">4. 保留原节点 Host / SNI（推荐）</label>
+            <div>
+              <label for="subscriptionName">5. 订阅名称（可选）</label>
+              <input id="subscriptionName" name="subscriptionName" type="text" placeholder="例如 我的优选订阅" />
             </div>
+          </div>
+
+          <div class="checkbox-wrap">
+            <input id="keepOriginalHost" name="keepOriginalHost" type="checkbox" checked />
+            <label for="keepOriginalHost">6. 保留原节点 Host / SNI（推荐）</label>
           </div>
 
           <div class="actions">
