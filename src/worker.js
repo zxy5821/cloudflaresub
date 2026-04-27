@@ -251,7 +251,7 @@ async function handleSub(url, env) {
       const templateText = await loadClashTemplate(env, url.origin);
       return download(
         renderTemplateClashSubscription(templateText, nodes),
-        `${subscriptionName}.yaml`,
+        subscriptionName,
         'text/yaml; charset=utf-8',
       );
     }
@@ -259,14 +259,14 @@ async function handleSub(url, env) {
     if (target === 'surge') {
       return download(
         renderSurgeSubscription(nodes, `${url.origin}${url.pathname}?target=surge&token=${encodeURIComponent(env.SUB_ACCESS_TOKEN || '')}`),
-        `${subscriptionName}.conf`,
+        subscriptionName,
         'text/plain; charset=utf-8',
       );
     }
 
     return download(
       renderRawSubscription(nodes),
-      `${subscriptionName}.txt`,
+      subscriptionName,
       'text/plain; charset=utf-8',
     );
   } catch (error) {

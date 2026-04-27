@@ -151,7 +151,7 @@ const clashResponse = await worker.fetch(new Request(generatePayload.urls.clash)
 assert.equal(clashResponse.status, 200);
 assert.equal(
   clashResponse.headers.get('content-disposition'),
-  "attachment; filename*=UTF-8''%E6%88%91%E7%9A%84%E8%AE%A2%E9%98%85.yaml",
+  "attachment; filename*=UTF-8''%E6%88%91%E7%9A%84%E8%AE%A2%E9%98%85",
 );
 const clashBody = await clashResponse.text();
 assert.match(clashBody, /自定义-1-US/);
