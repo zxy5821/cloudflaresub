@@ -76,25 +76,13 @@ cf.example.com:443#US-Edge"
           </div>
 
           <div class="grid two-col compact">
-            <div class="stack-md">
-              <div>
-                <label for="namePrefix">3. 备注前缀（可选）</label>
-                <input id="namePrefix" name="namePrefix" type="text" placeholder="例如 CF" />
-              </div>
-              <div>
-                <label for="nameTemplate">4. 节点名称模板（可选）</label>
-                <input
-                  id="nameTemplate"
-                  name="nameTemplate"
-                  type="text"
-                  placeholder="例如 {remark}-{index} 或 固定名称-{index}"
-                />
-                <p class="hint">可用变量：<code>{name}</code>、<code>{remark}</code>、<code>{index}</code>、<code>{prefix}</code>。</p>
-              </div>
+            <div>
+              <label for="namePrefix">3. 备注前缀（可选）</label>
+              <input id="namePrefix" name="namePrefix" type="text" placeholder="例如 CF" />
             </div>
             <div class="checkbox-wrap">
               <input id="keepOriginalHost" name="keepOriginalHost" type="checkbox" checked />
-              <label for="keepOriginalHost">保留原节点 Host / SNI（推荐）</label>
+              <label for="keepOriginalHost">4. 保留原节点 Host / SNI（推荐）</label>
             </div>
           </div>
 

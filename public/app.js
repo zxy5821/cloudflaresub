@@ -32,7 +32,6 @@ fillDemoBtn.addEventListener('click', () => {
   nodeLinksInput.value = demoVmess;
   document.getElementById('preferredIps').value = demoIps;
   document.getElementById('namePrefix').value = 'CF';
-  document.getElementById('nameTemplate').value = '{name} | {remark}';
   document.getElementById('keepOriginalHost').checked = true;
   syncNameMappingsFromNodeLinks();
 });
@@ -48,7 +47,6 @@ form.addEventListener('submit', async (event) => {
     nodeLinks: nodeLinksInput.value,
     preferredIps: document.getElementById('preferredIps').value,
     namePrefix: document.getElementById('namePrefix').value,
-    nameTemplate: document.getElementById('nameTemplate').value,
     nameMappings: nameMappingsInput.value,
     keepOriginalHost: document.getElementById('keepOriginalHost').checked,
   };

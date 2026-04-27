@@ -122,7 +122,6 @@ cloudflaresub/
   "nodeLinks": "vmess://...\nvless://...",
   "preferredIps": "104.16.1.2#HK\n104.17.2.3:2053#US",
   "namePrefix": "CF",
-  "nameTemplate": "{name} | {remark}",
   "nameMappings": "美国凤凰城2-11=凤凰城A\n341225-57ru4foh=凤凰城B",
   "keepOriginalHost": true
 }
@@ -132,7 +131,6 @@ cloudflaresub/
 - `nodeLinks`: 多行节点链接
 - `preferredIps`: 多行优选地址，格式 `host[:port][#remark]`
 - `namePrefix`: 节点名附加前缀
-- `nameTemplate`: 全局节点名称模板，可用变量 `{name}`、`{remark}`、`{index}`、`{prefix}`
 - `nameMappings`: 逐行名称映射，格式 `原名称=新名称`，按原始节点名称匹配
 - `keepOriginalHost`: 是否保留原始 Host/SNI（默认 `true`）
 
