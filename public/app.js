@@ -59,9 +59,16 @@ form.addEventListener('submit', async (event) => {
       body: JSON.stringify(payload),
     });
 
-    const data = await response.json();
+    const responseText = await response.text();
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      data = null;
+    }
+
     if (!response.ok || !data.ok) {
-      throw new Error(data.error || '生成失败');
+      throw new Error(data?.error || responseText || '生成失败');
     }
 
     autoUrl.value = data.urls.auto;

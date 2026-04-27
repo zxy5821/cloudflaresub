@@ -140,4 +140,23 @@ assert.match(clashBody, /自定义-1-US/);
 assert.match(clashBody, /proxy-groups:/);
 assert.match(clashBody, /MATCH,🐟 漏网之鱼/);
 
+const missingBindingResponse = await worker.fetch(
+  new Request('https://example.test/api/generate', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      nodeLinks: vmess,
+      preferredIps: '104.16.1.2#HK',
+    }),
+  }),
+  {
+    ASSETS: env.ASSETS,
+    SUB_ACCESS_TOKEN: 'secret-token',
+  },
+);
+assert.equal(missingBindingResponse.status, 500);
+const missingBindingPayload = await missingBindingResponse.json();
+assert.equal(missingBindingPayload.ok, false);
+assert.match(missingBindingPayload.error, /SUB_STORE/);
+
 console.log('smoke test passed');

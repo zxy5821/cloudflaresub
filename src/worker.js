@@ -33,6 +33,12 @@ function text(body, status = 200, contentType = 'text/plain; charset=utf-8') {
   });
 }
 
+function requireSubStore(env) {
+  if (!env?.SUB_STORE || typeof env.SUB_STORE.get !== 'function' || typeof env.SUB_STORE.put !== 'function') {
+    throw new Error('未配置 SUB_STORE 绑定，请在 Cloudflare Worker 的 Bindings 中绑定 KV namespace。');
+  }
+}
+
 function createShortId(length = 10) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
   const bytes = crypto.getRandomValues(new Uint8Array(length));
@@ -83,6 +89,8 @@ async function buildDedupHash(body) {
 }
 
 async function handleGenerate(request, env, url) {
+  requireSubStore(env);
+
   let body;
   try {
     body = await request.json();
@@ -196,6 +204,8 @@ async function loadClashTemplate(env, origin) {
 }
 
 async function handleSub(url, env) {
+  requireSubStore(env);
+
   const tokenCheck = validateAccessToken(url, env);
   if (!tokenCheck.ok) {
     return tokenCheck.response;
@@ -237,26 +247,36 @@ async function handleSub(url, env) {
 
 export default {
   async fetch(request, env) {
-    const url = new URL(request.url);
+    try {
+      const url = new URL(request.url);
 
-    if (request.method === 'OPTIONS') {
-      return new Response(null, {
-        headers: {
-          'access-control-allow-origin': '*',
-          'access-control-allow-methods': 'GET,POST,OPTIONS',
-          'access-control-allow-headers': 'content-type',
+      if (request.method === 'OPTIONS') {
+        return new Response(null, {
+          headers: {
+            'access-control-allow-origin': '*',
+            'access-control-allow-methods': 'GET,POST,OPTIONS',
+            'access-control-allow-headers': 'content-type',
+          },
+        });
+      }
+
+      if (request.method === 'POST' && url.pathname === '/api/generate') {
+        return await handleGenerate(request, env, url);
+      }
+
+      if (request.method === 'GET' && url.pathname.startsWith('/sub/')) {
+        return await handleSub(url, env);
+      }
+
+      return await env.ASSETS.fetch(request);
+    } catch (error) {
+      return json(
+        {
+          ok: false,
+          error: error?.message || '服务器内部错误',
         },
-      });
+        500,
+      );
     }
-
-    if (request.method === 'POST' && url.pathname === '/api/generate') {
-      return handleGenerate(request, env, url);
-    }
-
-    if (request.method === 'GET' && url.pathname.startsWith('/sub/')) {
-      return handleSub(url, env);
-    }
-
-    return env.ASSETS.fetch(request);
   },
 };
